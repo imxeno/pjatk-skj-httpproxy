@@ -28,25 +28,24 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-        public void handle() throws Exception {
-            System.out.println("Connected");
-            InputStream input = socket.getInputStream();
-            OutputStream output = socket.getOutputStream();
-            String request = "";
-            while(true) {
-                int available = input.available();
-                if(available > 0) {
-                    byte[] bytes = new byte[available];
-                    input.read(bytes);
-                    request += new String(bytes, StandardCharsets.UTF_8);
-                }
-                if(request.endsWith("\r\n\r\n")) {
-                    proxyRequest(request);
-                    request = "";
-                }
-                Thread.sleep(10);
+    public void handle() throws Exception {
+        InputStream input = socket.getInputStream();
+        OutputStream output = socket.getOutputStream();
+        String request = "";
+        while(true) {
+            int available = input.available();
+            if(available > 0) {
+                byte[] bytes = new byte[available];
+                input.read(bytes);
+                request += new String(bytes, StandardCharsets.UTF_8);
             }
+            if(request.endsWith("\r\n\r\n")) {
+                proxyRequest(request);
+                request = "";
+            }
+            Thread.sleep(10);
         }
+    }
 
     private void proxyRequest(String request) throws IOException, InterruptedException {
         List<String> req = Arrays.asList(request.split("\r\n"));

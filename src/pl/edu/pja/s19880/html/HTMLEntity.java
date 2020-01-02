@@ -62,6 +62,7 @@ public class HTMLEntity {
         String lowerCaseMethod = message.split(" ")[0].toLowerCase();
         headers.put(new HTTPHeader("Accept-Encoding", "identity")); // we prefer plaintext
         headers.remove("If-None-Match"); // we don't need caches
+        headers.remove("If-Modified-Since"); // we don't need caches
         try {
             if(!lowerCaseMethod.equals("get") && !lowerCaseMethod.equals("post")) {
                 this.connectionHandler.socket.close();

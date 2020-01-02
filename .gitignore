@@ -3,6 +3,7 @@
 
 # User-specific stuff
 .idea/**/workspace.xml
+.idea/**/hotswap_agent.xml
 .idea/**/tasks.xml
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries

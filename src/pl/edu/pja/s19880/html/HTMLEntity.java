@@ -83,6 +83,8 @@ public class HTMLEntity {
                     Logger.log("(PRX) Reading bytes");
                     if (proxied.parse()) {
                         Logger.log("(RES) " + proxied.message);
+                        proxied.headers.put(new HTTPHeader("X-Proxy-Author", "Piotr Adamczyk | s19880"));
+                        proxied.headers.put(new HTTPHeader("X-This-Proxy", "is very offensive to me 🎅"));
                         if(proxied.headers.containsKey("Content-Type") && proxied.headers.get("Content-Type").value().contains("text/html")) {
                             int headIndex = proxied.body.toLowerCase().indexOf("</head>");
                             proxied.body = proxied.body.substring(0, headIndex) + "<script>" + getUnpleasantWordFilterScript() + "</script>" + proxied.body.substring(headIndex);

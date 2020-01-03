@@ -34,8 +34,7 @@ public class ConnectionHandler implements Runnable {
                 htmlEntity.append(new String(bytes, StandardCharsets.UTF_8));
             }
             if(htmlEntity.parse()) {
-                if(htmlEntity.message.contains("example"))
-                    htmlEntity.process();
+                htmlEntity.process();
                 htmlEntity = new HTMLEntity(this);
             }
             Thread.sleep(10);

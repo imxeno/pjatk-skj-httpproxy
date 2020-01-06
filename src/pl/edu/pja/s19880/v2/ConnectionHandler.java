@@ -51,7 +51,6 @@ public class ConnectionHandler implements Runnable {
 
     @Override
     public void run() {
-        System.out.println(Thread.activeCount());
         try {
             HTTPEntity entity = parseHTTP(input);
             if (entity.getMessage().toLowerCase().contains("connect")) {

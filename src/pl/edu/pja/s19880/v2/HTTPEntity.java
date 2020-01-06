@@ -40,6 +40,7 @@ public class HTTPEntity {
     }
 
     public String getHost() {
+        if (!message.split(" ")[0].toLowerCase().equals("connect")) return this.getHeaders().get("Host").value();
         URI uri = null;
         try {
             uri = new URI(message.split(" ")[1]);
@@ -59,7 +60,7 @@ public class HTTPEntity {
         try {
             return uri.getPort() == -1 ? Integer.parseInt(uri.getSchemeSpecificPart()) : uri.getPort();
         } catch (NumberFormatException e) {
-            return uri.getScheme().toLowerCase().equals("https") ? 443 : 80;
+            return uri.getScheme() != null && uri.getScheme().toLowerCase().equals("https") ? 443 : 80;
         }
     }
 

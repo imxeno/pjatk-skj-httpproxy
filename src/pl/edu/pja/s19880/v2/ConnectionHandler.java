@@ -3,11 +3,13 @@ package pl.edu.pja.s19880.v2;
 import pl.edu.pja.s19880.v2.headers.HTTPHeader;
 import pl.edu.pja.s19880.v2.headers.HTTPHeaderMap;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class ConnectionHandler implements Runnable {
     private final Socket socket;
@@ -52,12 +54,13 @@ public class ConnectionHandler implements Runnable {
         byte[] body = new byte[0];
         HTTPHeader contentLength = headers.get("Content-Length");
         if(contentLength != null) {
+            int readBytes = 0;
             int contentLengthValue = Integer.parseInt(contentLength.value());
-            while(stream.available() < contentLengthValue) {
+            body = new byte[contentLengthValue];
+            while (readBytes < contentLengthValue) {
+                readBytes += stream.read(body, readBytes, contentLengthValue - readBytes);
                 Thread.sleep(10);
             }
-            body = new byte[contentLengthValue];
-            stream.read(body);
         }
         return new HTTPEntity(message, headers, body);
     }

@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class ConnectionHandler implements Runnable {
     private final Socket socket;
@@ -28,8 +29,8 @@ public class ConnectionHandler implements Runnable {
         try {
             while (true) {
                 HTTPEntity entity = parseHTTP(input);
-                Logger.log(entity.getMessage());
                 if(entity.getMessage().toLowerCase().contains("connect")) {
+                    Logger.log(entity.getMessage());
                     socket.close();
                     return;
                 }
@@ -43,7 +44,6 @@ public class ConnectionHandler implements Runnable {
         }
     }
     public static HTTPEntity parseHTTP(DataInputStream stream) throws IOException, InterruptedException {
-        System.out.println(stream.available());
         String message = stream.readLine();
         HTTPHeaderMap headers = new HTTPHeaderMap();
         String temp = stream.readLine();
@@ -69,7 +69,7 @@ public class ConnectionHandler implements Runnable {
 
     private void proxy(HTTPEntity httpEntity) throws InterruptedException {
         String message = httpEntity.getMessage();
-        httpEntity.setMessage(httpEntity.getMessage().replace("HTTP/1.1", "HTTP/1.0"));
+        httpEntity.setMessage(message.replace("HTTP/1.1", "HTTP/1.0"));
         Logger.log("(REQ) " + message);
         String lowerCaseMethod = message.split(" ")[0].toLowerCase();
         httpEntity.getHeaders().put(new HTTPHeader("Accept-Encoding", "identity")); // we prefer plaintext
@@ -88,12 +88,15 @@ public class ConnectionHandler implements Runnable {
             Logger.log("(RES) " + proxied.getMessage());
             proxied.getHeaders().put(new HTTPHeader("X-Proxy-Author", "Piotr Adamczyk | s19880"));
             proxied.getHeaders().put(new HTTPHeader("X-This-Proxy", "is very offensive to me 🎅"));
-            /*if(proxied.getHeaders().containsKey("Content-Type") && proxied.getHeaders().get("Content-Type").value().contains("text/html")) {
-                int headIndex = proxied.body.toLowerCase().indexOf("</head>");
-                proxied.body = proxied.body.substring(0, headIndex) + "<script>" + getUnpleasantWordFilterScript() + "</script>" + proxied.body.substring(headIndex);
-                proxied.headers.put(new pl.edu.pja.s19880.v1.html.headers.HTTPHeader("Content-Length", "" + proxied.body.getBytes(StandardCharsets.UTF_8).length));
+            if (proxied.getHeaders().containsKey("Content-Type") && proxied.getHeaders().get("Content-Type").value().contains("text/html")) {
+                String body = new String(proxied.getBody(), StandardCharsets.UTF_8);
+                int headIndex = body.toLowerCase().indexOf("</head>");
+                if (headIndex != -1) {
+                    body = body.substring(0, headIndex) + "<script>" + HTTPEntity.getUnpleasantWordFilterScript() + "</script>" + body.substring(headIndex);
+                    proxied.setBody(body.getBytes(StandardCharsets.UTF_8));
+                    proxied.getHeaders().put(new HTTPHeader("Content-Length", "" + proxied.getBody().length));
+                }
             }
-            byte[] content = proxied.toString().getBytes(StandardCharsets.UTF_8);*/
             output.write(proxied.getBytes());
             output.flush();
             s.close();

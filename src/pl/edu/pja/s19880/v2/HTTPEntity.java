@@ -53,4 +53,12 @@ public class HTTPEntity {
     public void setMessage(String message) {
         this.message = message;
     }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+    public void setBody(byte[] body) {
+        this.body = body;
+    }
 }

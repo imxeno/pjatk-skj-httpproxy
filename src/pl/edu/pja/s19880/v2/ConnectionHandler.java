@@ -53,7 +53,7 @@ public class ConnectionHandler implements Runnable {
         }
         byte[] body = new byte[0];
         HTTPHeader contentLength = headers.get("Content-Length");
-        if(contentLength != null) {
+        if (contentLength != null) {
             int readBytes = 0;
             int contentLengthValue = Integer.parseInt(contentLength.value());
             body = new byte[contentLengthValue];
@@ -61,12 +61,15 @@ public class ConnectionHandler implements Runnable {
                 readBytes += stream.read(body, readBytes, contentLengthValue - readBytes);
                 Thread.sleep(10);
             }
+        } else if (stream.available() > 0) {
+            body = stream.readAllBytes();
         }
         return new HTTPEntity(message, headers, body);
     }
 
     private void proxy(HTTPEntity httpEntity) throws InterruptedException {
         String message = httpEntity.getMessage();
+        httpEntity.setMessage(httpEntity.getMessage().replace("HTTP/1.1", "HTTP/1.0"));
         Logger.log("(REQ) " + message);
         String lowerCaseMethod = message.split(" ")[0].toLowerCase();
         httpEntity.getHeaders().put(new HTTPHeader("Accept-Encoding", "identity")); // we prefer plaintext

@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 
 public class HTTPEntity {
     public static final String LINE_END = "\r\n";
@@ -46,8 +45,12 @@ public class HTTPEntity {
             ba.write(LINE_END.getBytes(StandardCharsets.UTF_8));
             ba.write(body);
             return ba.toByteArray();
-        } catch(IOException e) {
+        } catch (IOException e) {
             return new byte[0];
         }
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

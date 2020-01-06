@@ -1,4 +1,4 @@
-package pl.edu.pja.s19880;
+package pl.edu.pja.s19880.v1;
 
 public class Logger {
     private Logger() {}

@@ -1,9 +1,9 @@
-package pl.edu.pja.s19880.html;
+package pl.edu.pja.s19880.v1.html;
 
-import pl.edu.pja.s19880.ConnectionHandler;
-import pl.edu.pja.s19880.Logger;
-import pl.edu.pja.s19880.html.headers.HTTPHeader;
-import pl.edu.pja.s19880.html.headers.HTTPHeaderMap;
+import pl.edu.pja.s19880.v1.ConnectionHandler;
+import pl.edu.pja.s19880.v1.Logger;
+import pl.edu.pja.s19880.v1.html.headers.HTTPHeader;
+import pl.edu.pja.s19880.v1.html.headers.HTTPHeaderMap;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,7 +16,8 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 
 public class HTMLEntity {
-    public static String LINE_END = "\r\n";
+    public static final String LINE_END = "\r\n";
+    public static final String HEADER_SEPARATOR = LINE_END + LINE_END;
     private final ConnectionHandler connectionHandler;
     private StringBuilder raw = new StringBuilder();
     public String message;
@@ -33,20 +34,24 @@ public class HTMLEntity {
     }
 
     public boolean parse() {
-        String[] arr = raw.toString().split(LINE_END, -1);
-        for(int i = 1; i < arr.length; i++) {
-            if(!arr[i].equals("")) continue;
-            message = arr[0];
-            headers = new HTTPHeaderMap(String.join("\r\n", Arrays.copyOfRange(arr, 1, i)));
-            if(headers.get("Content-Length") != null) {
+        try {
+            String[] payload = raw.toString().split(HEADER_SEPARATOR, 2);
+            if (payload.length < 1) return false;
+            String[] headerPayload = payload[0].split(LINE_END);
+            if (headerPayload.length < 2) return false;
+            message = headerPayload[0];
+            headers = new HTTPHeaderMap(Arrays.copyOfRange(headerPayload, 1, headerPayload.length));
+            if (headers.get("Content-Length") != null) {
                 int contentLength = Integer.parseInt(headers.get("Content-Length").value());
-                if(arr.length < i + 1) return false;
-                body = String.join("\r\n", Arrays.copyOfRange(arr, i + 1, arr.length)).substring(0, contentLength);
-                return body.length() == contentLength;
+                if(payload.length < 2) return false;
+                if(payload[1].length() < contentLength) return false;
+                body = payload[1].substring(0, contentLength);
             }
             return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     @Override
@@ -93,7 +98,6 @@ public class HTMLEntity {
                         byte[] content = proxied.toString().getBytes(StandardCharsets.UTF_8);
                         this.connectionHandler.socket.getOutputStream().write(content);
                         this.connectionHandler.socket.getOutputStream().flush();
-                        this.connectionHandler.socket.getOutputStream().close();
                         s.close();
                         return;
                     }

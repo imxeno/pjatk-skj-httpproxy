@@ -24,25 +24,6 @@ public class ConnectionHandler implements Runnable {
         new Thread(this).start();
     }
 
-    @Override
-    public void run() {
-        try {
-            while (true) {
-                HTTPEntity entity = parseHTTP(input);
-                if(entity.getMessage().toLowerCase().contains("connect")) {
-                    Logger.log(entity.getMessage());
-                    socket.close();
-                    return;
-                }
-                proxy(entity);
-                socket.close();
-                return;
-            }
-        } catch (IOException | InterruptedException e) {
-            if(e.getMessage().contains("Stream closed")) return;
-            e.printStackTrace();
-        }
-    }
     public static HTTPEntity parseHTTP(DataInputStream stream) throws IOException, InterruptedException {
         String message = stream.readLine();
         HTTPHeaderMap headers = new HTTPHeaderMap();
@@ -59,15 +40,35 @@ public class ConnectionHandler implements Runnable {
             body = new byte[contentLengthValue];
             while (readBytes < contentLengthValue) {
                 readBytes += stream.read(body, readBytes, contentLengthValue - readBytes);
-                Thread.sleep(10);
+                Thread.sleep(1);
             }
         } else if (stream.available() > 0) {
             body = stream.readAllBytes();
         }
+        if (message == null) throw new IOException("DataInputStream returned null");
         return new HTTPEntity(message, headers, body);
     }
 
-    private void proxy(HTTPEntity httpEntity) throws InterruptedException {
+    @Override
+    public void run() {
+        System.out.println(Thread.activeCount());
+        try {
+            HTTPEntity entity = parseHTTP(input);
+            if (entity.getMessage().toLowerCase().contains("connect")) {
+                Logger.log("(TUN) " + entity.getMessage());
+                proxyHTTPS(entity);
+                socket.close();
+                return;
+            }
+            proxyHTTP(entity);
+            socket.close();
+        } catch (IOException | InterruptedException e) {
+            if (e.getMessage().contains("Stream closed") || e.getMessage().contains("DataInputStream")) return;
+            e.printStackTrace();
+        }
+    }
+
+    private void proxyHTTP(HTTPEntity httpEntity) throws InterruptedException {
         String message = httpEntity.getMessage();
         httpEntity.setMessage(message.replace("HTTP/1.1", "HTTP/1.0"));
         Logger.log("(REQ) " + message);
@@ -76,12 +77,12 @@ public class ConnectionHandler implements Runnable {
         httpEntity.getHeaders().remove("If-None-Match"); // we don't need caches
         httpEntity.getHeaders().remove("If-Modified-Since"); // we don't need caches
         try {
-            if(!lowerCaseMethod.equals("get") && !lowerCaseMethod.equals("post")) {
+            if (!lowerCaseMethod.equals("get") && !lowerCaseMethod.equals("post")) {
                 socket.close();
                 return;
             }
             Socket s = new Socket();
-            s.connect(new InetSocketAddress(InetAddress.getByName(httpEntity.getHeaders().get("host").value()), 80));
+            s.connect(new InetSocketAddress(InetAddress.getByName(httpEntity.getHost()), httpEntity.getPort()));
             Logger.log("(PRX) Connected socket!");
             s.getOutputStream().write(httpEntity.getBytes());
             HTTPEntity proxied = parseHTTP(new DataInputStream(new BufferedInputStream(s.getInputStream())));
@@ -103,5 +104,31 @@ public class ConnectionHandler implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void proxyHTTPS(HTTPEntity httpEntity) throws IOException, InterruptedException {
+        Socket s = new Socket();
+        s.connect(new InetSocketAddress(InetAddress.getByName(httpEntity.getHost()), httpEntity.getPort()));
+        output.write("HTTP/1.1 200 OK\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+        long lastTransmission = System.currentTimeMillis();
+        while (!socket.isClosed()) {
+            if (input.available() > 0) {
+                int len = input.available();
+                byte[] temp = new byte[len];
+                input.read(temp, 0, len);
+                s.getOutputStream().write(temp);
+                lastTransmission = System.currentTimeMillis();
+            }
+            if (s.getInputStream().available() > 0) {
+                int len = s.getInputStream().available();
+                byte[] temp = new byte[len];
+                s.getInputStream().read(temp, 0, len);
+                output.write(temp);
+                lastTransmission = System.currentTimeMillis();
+            }
+            if (lastTransmission + 10000L < System.currentTimeMillis()) break;
+            Thread.sleep(1);
+        }
+        s.close();
     }
 }

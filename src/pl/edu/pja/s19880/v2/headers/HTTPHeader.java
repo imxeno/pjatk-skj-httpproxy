@@ -10,7 +10,7 @@ public class HTTPHeader {
     }
 
     public HTTPHeader(String line) {
-        String[] temp = line.split(":( |)");
+        String[] temp = line.split(":( |)", 2);
         this.name = temp[0];
         this.value = temp[1];
     }

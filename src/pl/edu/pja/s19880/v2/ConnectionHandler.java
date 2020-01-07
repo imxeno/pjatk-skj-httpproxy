@@ -2,6 +2,7 @@ package pl.edu.pja.s19880.v2;
 
 import pl.edu.pja.s19880.v2.headers.HTTPHeader;
 import pl.edu.pja.s19880.v2.headers.HTTPHeaderMap;
+import pl.edu.pja.s19880.v2.polyfill.InputStreamPolyfill;
 
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
@@ -24,6 +25,7 @@ public class ConnectionHandler implements Runnable {
         new Thread(this).start();
     }
 
+    @SuppressWarnings("deprecated")
     public static HTTPEntity parseHTTP(DataInputStream stream) throws IOException, InterruptedException {
         String message = stream.readLine();
         HTTPHeaderMap headers = new HTTPHeaderMap();
@@ -43,7 +45,7 @@ public class ConnectionHandler implements Runnable {
                 Thread.sleep(1);
             }
         } else if (stream.available() > 0) {
-            body = stream.readAllBytes();
+            body = new InputStreamPolyfill(stream).readAllBytes();
         }
         if (message == null) throw new IOException("DataInputStream returned null");
         return new HTTPEntity(message, headers, body);

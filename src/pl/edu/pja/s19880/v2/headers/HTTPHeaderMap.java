@@ -1,6 +1,6 @@
 package pl.edu.pja.s19880.v2.headers;
 
-import pl.edu.pja.s19880.v1.html.HTMLEntity;
+import pl.edu.pja.s19880.v2.HTTPEntity;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -89,7 +89,7 @@ public class HTTPHeaderMap implements Map<String, HTTPHeader> {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         for(HTTPHeader header : values()) {
-            sb.append(header).append(HTMLEntity.LINE_END);
+            sb.append(header).append(HTTPEntity.LINE_END);
         }
         return sb.toString();
     }

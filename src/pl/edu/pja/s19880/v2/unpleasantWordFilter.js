@@ -1,4 +1,4 @@
-const unpleasantWords = ['o'];
+const unpleasantWords = [/*UNPLEASANT_WORDS_HERE*/];
 
 function replaceInText(element, pattern, replacement) {
     for (let node of element.childNodes) {
@@ -17,7 +17,7 @@ function replaceInText(element, pattern, replacement) {
 }
 
 window.onload = () => {
-    const rgx = new RegExp("(" + unpleasantWords.join("|") + ")", "g")
+    const rgx = new RegExp("(" + unpleasantWords.join("|") + ")", "g");
     replaceInText(document.body, rgx, "<span class='s19880-unpleasantWord'>$1</span>");
     document.body.innerHTML += "<style>.s19880-unpleasantWord{color: red;}</style>";
-}
+};

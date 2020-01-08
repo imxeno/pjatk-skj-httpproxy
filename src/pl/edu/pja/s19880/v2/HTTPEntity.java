@@ -10,6 +10,9 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class HTTPEntity {
     public static final String LINE_END = "\r\n";
@@ -24,8 +27,12 @@ public class HTTPEntity {
     }
 
     public static String getUnpleasantWordFilterScript() {
+        List<String> words = new ArrayList<>(Arrays.asList(ProxyConfig.instance.unpleasantWords));
+        for (int i = 0; i < words.size(); i++) {
+            words.set(i, String.format("\"%s\"", words.get(i).replace("\"", "\\\"")));
+        }
         try {
-            return new String(Files.readAllBytes(Paths.get("src/pl/edu/pja/s19880/v2/unpleasantWordFilter.js")));
+            return new String(Files.readAllBytes(Paths.get("src/pl/edu/pja/s19880/v2/unpleasantWordFilter.js"))).replace("/*UNPLEASANT_WORDS_HERE*/", String.join(",", words));
         } catch (IOException e) {
             return "alert('error!');";
         }

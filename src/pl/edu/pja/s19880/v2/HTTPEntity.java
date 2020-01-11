@@ -5,16 +5,19 @@ import pl.edu.pja.s19880.v2.headers.HTTPHeaderMap;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class HTTPEntity {
+public class HTTPEntity implements Serializable {
     public static final String LINE_END = "\r\n";
     private String message;
     private HTTPHeaderMap headers;
@@ -95,5 +98,20 @@ public class HTTPEntity {
 
     public void setBody(byte[] body) {
         this.body = body;
+    }
+
+
+    public String getHash() {
+        try {
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            md5.update(this.message.getBytes());
+            md5.update(this.headers.toString().getBytes());
+            md5.update(this.body);
+            byte[] digest = md5.digest();
+            return Utils.bytesToHex(digest);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            return "";
+        }
     }
 }

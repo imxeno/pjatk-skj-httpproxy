@@ -2,12 +2,13 @@ package pl.edu.pja.s19880.v2.headers;
 
 import pl.edu.pja.s19880.v2.HTTPEntity;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class HTTPHeaderMap implements Map<String, HTTPHeader> {
+public class HTTPHeaderMap implements Map<String, HTTPHeader>, Serializable {
     HashMap<String, HTTPHeader> map = new HashMap<>();
 
     @Override

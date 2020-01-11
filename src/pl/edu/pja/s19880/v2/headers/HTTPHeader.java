@@ -1,6 +1,8 @@
 package pl.edu.pja.s19880.v2.headers;
 
-public class HTTPHeader {
+import java.io.Serializable;
+
+public class HTTPHeader implements Serializable {
     private String name;
     private String value;
 

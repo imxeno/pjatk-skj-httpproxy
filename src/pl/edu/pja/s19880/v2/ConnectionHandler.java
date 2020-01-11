@@ -50,31 +50,23 @@ public class ConnectionHandler implements Runnable {
         return new HTTPEntity(message, headers, body);
     }
 
-    @Override
-    public void run() {
-        try {
-            HTTPEntity entity = parseHTTP(input);
-            if (entity.getMessage().toLowerCase().contains("connect")) {
-                Logger.log("(TUN) " + entity.getMessage());
-                proxyHTTPS(entity);
-                socket.close();
-                return;
-            }
-            proxyHTTP(entity);
-            socket.close();
-        } catch (IOException | InterruptedException e) {
-            if (e.getMessage().contains("Stream closed") || e.getMessage().contains("DataInputStream")) return;
-            e.printStackTrace();
-        }
-    }
-
     private static void storeInCache(String hash, HTTPEntity entity) {
-        Path path = Paths.get(ProxyConfig.instance.cacheDir, hash);
+        Path path = Paths.get(ProxyConfig.instance.cacheDir, (ProxyConfig.instance.heavyMode ? "heavy" : "light") + hash);
         try (OutputStream file = new FileOutputStream(path.toString());
              ObjectOutputStream stream = new ObjectOutputStream(file)) {
             stream.writeObject(entity);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static HTTPEntity getFromCache(String hash) {
+        Path path = Paths.get(ProxyConfig.instance.cacheDir, (ProxyConfig.instance.heavyMode ? "heavy" : "light") + hash);
+        try (InputStream file = new FileInputStream(path.toString());
+             ObjectInputStream stream = new ObjectInputStream(file)) {
+            return (HTTPEntity) stream.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            return null;
         }
     }
 
@@ -104,13 +96,23 @@ public class ConnectionHandler implements Runnable {
         s.close();
     }
 
-    private static HTTPEntity getFromCache(String hash) {
-        Path path = Paths.get(ProxyConfig.instance.cacheDir, hash);
-        try (InputStream file = new FileInputStream(path.toString());
-             ObjectInputStream stream = new ObjectInputStream(file)) {
-            return (HTTPEntity) stream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            return null;
+    @Override
+    public void run() {
+        try {
+            HTTPEntity entity = parseHTTP(input);
+            if (entity.getMessage().toLowerCase().contains("connect")) {
+                if (ProxyConfig.instance.heavyMode) {
+                    Logger.log("(TUN) " + entity.getMessage());
+                    proxyHTTPS(entity);
+                }
+                socket.close();
+                return;
+            }
+            proxyHTTP(entity);
+            socket.close();
+        } catch (IOException | InterruptedException e) {
+            if (e.getMessage().contains("Stream closed") || e.getMessage().contains("DataInputStream")) return;
+            e.printStackTrace();
         }
     }
 
@@ -132,7 +134,6 @@ public class ConnectionHandler implements Runnable {
             String lowerCaseMethod = message.split(" ")[0].toLowerCase();
             httpEntity.getHeaders().put(new HTTPHeader("Accept-Encoding", "identity")); // we prefer plaintext
             if (!lowerCaseMethod.equals("get") && !lowerCaseMethod.equals("post")) {
-                socket.close();
                 return;
             }
             Socket s = new Socket();
@@ -140,6 +141,13 @@ public class ConnectionHandler implements Runnable {
             Logger.log("(PRX) Connected socket!");
             s.getOutputStream().write(httpEntity.getBytes());
             HTTPEntity proxied = parseHTTP(new DataInputStream(new BufferedInputStream(s.getInputStream())));
+            if (!ProxyConfig.instance.heavyMode
+                    && !proxied.getHeaders().get("Content-Type").value().toLowerCase().contains("text")) {
+                output.write("HTTP/1.1 418 I'm a teapot\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+                output.flush();
+                s.close();
+                return;
+            }
             Logger.log("(RES) " + proxied.getMessage());
             proxied.getHeaders().put(new HTTPHeader("X-Proxy-Author", "Piotr Adamczyk | s19880"));
             proxied.getHeaders().put(new HTTPHeader("X-Proxy-MOTD", "This proxy is very offensive to me 🎅"));

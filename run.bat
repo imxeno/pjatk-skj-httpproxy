@@ -1,0 +1,1 @@
+java -cp src/ pl.edu.pja.s19880.v2.Main config.properties light

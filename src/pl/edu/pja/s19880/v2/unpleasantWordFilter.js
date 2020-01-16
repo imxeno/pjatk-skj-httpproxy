@@ -19,5 +19,5 @@ function replaceInText(element, pattern, replacement) {
 window.onload = () => {
     const rgx = new RegExp("(" + unpleasantWords.join("|") + ")", "g");
     replaceInText(document.body, rgx, "<span class='s19880-unpleasantWord'>$1</span>");
-    document.body.innerHTML += "<style>.s19880-unpleasantWord{color: red;}</style>";
+    document.body.innerHTML += "<style>.s19880-unpleasantWord{color: red;background-color:yellow;}</style>";
 };

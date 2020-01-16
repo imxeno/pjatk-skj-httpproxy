@@ -148,6 +148,7 @@ public class ConnectionHandler implements Runnable {
                 s.close();
                 return;
             }
+            proxied.unpackGzip();
             Logger.log("(RES) " + proxied.getMessage());
             proxied.getHeaders().put(new HTTPHeader("X-Proxy-Author", "Piotr Adamczyk | s19880"));
             proxied.getHeaders().put(new HTTPHeader("X-Proxy-MOTD", "This proxy is very offensive to me 🎅"));

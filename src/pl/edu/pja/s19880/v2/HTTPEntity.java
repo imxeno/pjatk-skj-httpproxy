@@ -1,8 +1,11 @@
 package pl.edu.pja.s19880.v2;
 
 
+import pl.edu.pja.s19880.v2.headers.HTTPHeader;
 import pl.edu.pja.s19880.v2.headers.HTTPHeaderMap;
+import pl.edu.pja.s19880.v2.polyfill.InputStreamPolyfill;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -16,6 +19,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 public class HTTPEntity implements Serializable {
     public static final String LINE_END = "\r\n";
@@ -27,6 +31,23 @@ public class HTTPEntity implements Serializable {
         this.message = message;
         this.headers = headers;
         this.body = body;
+    }
+
+    public void unpackGzip() {
+        if (this.getHeaders().get("Content-Encoding") == null
+                || !this.getHeaders().get("Content-Encoding").value().toLowerCase().contains("gzip"))
+            return;
+        GZIPInputStream gzip;
+        try {
+            byte[] temp = new byte[body.length];
+            System.arraycopy(body, 0, temp, 0, body.length);
+            gzip = new GZIPInputStream(new ByteArrayInputStream(body));
+            this.body = new InputStreamPolyfill(gzip).readAllBytes();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        this.getHeaders().put(new HTTPHeader("Content-Encoding", "identity"));
+        this.getHeaders().put(new HTTPHeader("Content-Length", "" + body.length));
     }
 
     public static String getUnpleasantWordFilterScript() {
